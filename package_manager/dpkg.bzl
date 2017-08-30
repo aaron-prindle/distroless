@@ -56,7 +56,7 @@ _dpkg_src = repository_rule(
         "url": attr.string(),
         "arch": attr.string(),
         "distro": attr.string(),
-        "snapshot": attr.string(),
+        "snapshot": attr.string_list(),
         "sha256": attr.string(),
         "_dpkg_parser": attr.label(
             executable = True,

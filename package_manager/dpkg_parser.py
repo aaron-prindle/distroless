@@ -50,7 +50,7 @@ parser.add_argument("--arch", action='store',
 parser.add_argument("--distro", action='store',
                     help='The target distribution for the package list')
 parser.add_argument("--snapshot", action='store',
-                    help='The snapshot date to download')
+                    help='The snapshot date(s) to download. Can be a comma separated list of snapshots.')
 parser.add_argument("--sha256", action='store',
                     help='The sha256 checksum to validate for the Packages.gz file')
 
@@ -91,7 +91,7 @@ def download_dpkg(package_files, packages, workspace_name):
     with open(PACKAGE_MAP_FILE_NAME, 'w') as f:
         f.write("packages = " + json.dumps(package_to_rule_map))
 
-def download_package_list(mirror_url, distro, arch, snapshot, sha256):
+def download_package_list(mirror_url, distro, arch, snapshots, sha256):
     """Downloads a debian package list, expands the relative urls,
     and saves the metadata as a json file
 
@@ -121,23 +121,26 @@ SHA1: 869934a25a8bb3def0f17fef9221bed2d3a460f9
 SHA256: 52ec3ac93cf8ba038fbcefe1e78f26ca1d59356cdc95e60f987c3f52b3f5e7ef
 
     """
-    url = "%s/debian/%s/dists/%s/main/binary-%s/Packages.gz" % (
-        mirror_url,
-        snapshot,
-        distro,
-        arch
-    )
-    buf = urllib2.urlopen(url)
-    with open("Packages.gz", 'w') as f:
-        f.write(buf.read())
-    actual_sha256 = util.sha256_checksum("Packages.gz")
-    if sha256 != actual_sha256:
-        raise Exception("sha256 of Packages.gz don't match: Expected: %s, Actual:%s" %(sha256, actual_sha256))
-    with gzip.open("Packages.gz", 'rb') as f:
-        data = f.read()
-    metadata = parse_package_metadata(data, mirror_url, snapshot)
-    with open(PACKAGES_FILE_NAME, 'w') as f:
-        json.dump(metadata, f)
+    snapshot_arr = snapshots.split(",")
+    for snapshot in snapshot_arr:
+        url = "%s/debian/%s/dists/%s/main/binary-%s/Packages.gz" % (
+            mirror_url,
+            snapshot,
+            distro,
+            arch
+        )
+        print url
+        buf = urllib2.urlopen(url)
+        with open("Packages.gz", 'w') as f:
+            f.write(buf.read())
+        actual_sha256 = util.sha256_checksum("Packages.gz")
+        if sha256 != actual_sha256:
+            raise Exception("sha256 of Packages.gz don't match: Expected: %s, Actual:%s" %(sha256, actual_sha256))
+        with gzip.open("Packages.gz", 'rb') as f:
+            data = f.read()
+        metadata = parse_package_metadata(data, mirror_url, snapshot)
+        with open(PACKAGES_FILE_NAME, 'w') as f:
+            json.dump(metadata, f)
 
 if __name__ == "__main__":
     main()
