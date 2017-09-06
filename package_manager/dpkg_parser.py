@@ -91,7 +91,7 @@ def download_dpkg(package_files, packages, workspace_name):
     with open(PACKAGE_MAP_FILE_NAME, 'w') as f:
         f.write("packages = " + json.dumps(package_to_rule_map))
 
-def download_package_list(mirror_url, distro, arch, snapshots, sha256):
+def download_package_list(mirror_url, distro, arch, snapshots, sha256s):
     """Downloads a debian package list, expands the relative urls,
     and saves the metadata as a json file
 
@@ -122,24 +122,33 @@ SHA256: 52ec3ac93cf8ba038fbcefe1e78f26ca1d59356cdc95e60f987c3f52b3f5e7ef
 
     """
     snapshot_arr = snapshots.split(",")
-    for snapshot in snapshot_arr:
+    sha256_arr = sha256s.split(",")
+    if len(snapshot_arr) != len(sha256_arr):
+        raise Exception("there must be an equal number of arguments for snapshots and sha256s")
+    for i in xrange(len(snapshot_arr)):
         url = "%s/debian/%s/dists/%s/main/binary-%s/Packages.gz" % (
             mirror_url,
-            snapshot,
+            snapshot_arr[i],
             distro,
             arch
         )
         print url
         buf = urllib2.urlopen(url)
-        with open("Packages.gz", 'w') as f:
+        package_name = "%s-Packages.gz" % (snapshot_arr[i])
+        with open(package_name, 'w') as f:
             f.write(buf.read())
-        actual_sha256 = util.sha256_checksum("Packages.gz")
-        if sha256 != actual_sha256:
-            raise Exception("sha256 of Packages.gz don't match: Expected: %s, Actual:%s" %(sha256, actual_sha256))
-        with gzip.open("Packages.gz", 'rb') as f:
+        actual_sha256 = util.sha256_checksum(package_name)
+        if sha256_arr[i] != actual_sha256:
+            raise Exception("sha256 of %s don't match: Expected: %s, Actual:%s" %(
+                package_name,
+                sha256_arr[i], 
+                actual_sha256))
+        with gzip.open(package_name, 'rb') as f:
             data = f.read()
-        metadata = parse_package_metadata(data, mirror_url, snapshot)
-        with open(PACKAGES_FILE_NAME, 'w') as f:
+        metadata = parse_package_metadata(data, mirror_url, snapshot_arr[i])
+        if not os.path.exists(OUT_FOLDER):
+            os.makedirs(OUT_FOLDER)
+        with open(os.path.join(OUT_FOLDER,snapshot_arr[i]+"-Packages.json"), 'w') as f:
             json.dump(metadata, f)
 
 if __name__ == "__main__":

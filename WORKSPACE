@@ -25,7 +25,8 @@ dpkg_src(
     distro = "jessie",
     sha256 = "142cceae78a1343e66a0d27f1b142c406243d7940f626972c2c39ef71499ce61",
     snapshot = [
-        "20170821T035341Z"
+        "20170821T035341Z",
+        "20160429T130426Z"
     ],
     url = "http://snapshot.debian.org/archive",
 )
@@ -37,6 +38,7 @@ dpkg_src(
     sha256 = "eba769f0a0bcaffbb82a8b61d4a9c8a0a3299d5111a68daeaf7e50cc0f76e0ab",
     snapshot = [
         "20170821T035341Z",
+        "20160429T130426Z",
     ],
     url = "http://snapshot.debian.org/archive",
 )
